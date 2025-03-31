@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using WebApi.DTO.Account;
 using WebApi.Models;
 using WebApi.Services;
@@ -41,9 +42,32 @@ namespace WebApi.Controllers
         }
 
         [HttpPost("Register")]
-        public async Task<IActionResult> Register(RegisterDto registerDto)
+        public async Task<IActionResult> Register(RegisterDto register)
         {
+            if (await CheckEmailExists(register.Email)){
+                return BadRequest($"Account exists for {register.Email}. Please use another email");
+            }
 
+            var userToAdd = new User
+            {
+                FirstName = register.FirstName,
+                LastName = register.LastName,
+             //   Address = register.Address,
+                UserName = register.Email.ToLower(),
+                Email = register.Email.ToLower(),
+                EmailConfirmed = true
+            };
+
+            var result = await _userManager.CreateAsync(userToAdd, register.Password);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+            else
+            {
+                return Ok("Your account has been created successfully.");
+            }
+            
         }
 
         #region Private Helper Methods
@@ -56,6 +80,11 @@ namespace WebApi.Controllers
                 JWT = _jwtService.CreateJWT(user),
 
             };
+        }
+
+        private async Task<bool> CheckEmailExists(string email)
+        {
+            return await _userManager.Users.AnyAsync(u => u.Email == email.ToLower());
         }
         #endregion
 
