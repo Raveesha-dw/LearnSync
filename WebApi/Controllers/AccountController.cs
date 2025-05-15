@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -27,18 +28,28 @@ namespace WebApi.Controllers
         public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
         {
             var user = await _userManager.FindByNameAsync(loginDto.UserName);
-            if (user == null) return Unauthorized("Invalid Username or Password");
+           // var user = await _userManager.FindByEmailAsync(loginDto.UserName);
+            if (user == null)
+            {
+                Console.WriteLine(user.UserName);
+                return Unauthorized("Invalid Username or Password");
+            }
+
+         //   return Ok(new { message = "User found", user.UserName, user.Email, user.EmailConfirmed });
 
             if (user.EmailConfirmed == false) return Unauthorized("Please confirm your email");
 
+            Console.WriteLine($"Checking password for user: {user.UserName}");
             var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, false);
+            Console.WriteLine($"Password check result: {result.Succeeded}");
+
             if (!result.Succeeded)
             {
                 return Unauthorized("Invalid username or password");
             }
 
             return CreateApplicationUserDto(user);
-            
+
         }
 
         [HttpPost("Register")]
@@ -55,7 +66,8 @@ namespace WebApi.Controllers
              //   Address = register.Address,
                 UserName = register.Email.ToLower(),
                 Email = register.Email.ToLower(),
-                EmailConfirmed = true
+                EmailConfirmed = true,
+                PhoneNumberConfirmed = true
             };
 
             var result = await _userManager.CreateAsync(userToAdd, register.Password);
