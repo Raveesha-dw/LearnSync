@@ -8,6 +8,6 @@
         public string LastName { get; set; }
         public string Email { get; set; }
 
-        public int MyProperty { get; set; }
+        public string JWT { get; set; }
     }
 }
